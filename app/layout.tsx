@@ -19,11 +19,11 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={`${inter.className} bg-black text-white`}>
-        <SessionProvider>
+        <SessionWrapper>
           <Navbar />
           {children}
-          <AutoLogout /> {/* Auto logout cho Admin & Trưởng quầy */}
-        </SessionProvider>
+          <AutoLogout />
+        </SessionWrapper>
       </body>
     </html>
   );
