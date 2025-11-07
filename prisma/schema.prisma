@@ -51,8 +51,8 @@ model Order {
   staffId      String
   staff        User     @relation(fields: [staffId], references: [id])
 
-  amount       Int      // VND
-  pointsEarned Int
+  amount       Int      @default(0)// VND
+  pointsEarned Int      @default(0)
   pointsUsed   Int      @default(0)
   discount     Int      @default(0)
 
