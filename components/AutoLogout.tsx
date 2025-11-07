@@ -1,32 +1,42 @@
-"use client"
-import { useSession, signOut } from "next-auth/react"
-import { useEffect } from "react"
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
+
+// Khai báo kiểu cho window.autoLogoutTimer
+declare global {
+  interface Window {
+    autoLogoutTimer?: NodeJS.Timeout;
+  }
+}
 
 export default function AutoLogout() {
-  const { data: session } = useSession()
+  const router = useRouter();
 
   useEffect(() => {
-    if (!session || session.user.role === "STAFF") return
+    const timeout = 15 * 60 * 1000; // 15 phút
 
-    // Reset timer on activity
     const resetTimer = () => {
-      clearTimeout(window.autoLogoutTimer)
+      if (window.autoLogoutTimer) {
+        clearTimeout(window.autoLogoutTimer);
+      }
       window.autoLogoutTimer = setTimeout(() => {
-        alert("Phiên đăng nhập hết hạn do không hoạt động.")
-        signOut({ callbackUrl: "/login" })
-      }, 15 * 60 * 1000) // 15 minutes
-    }
+        alert('Phiên đăng nhập hết hạn do không hoạt động.');
+        signOut({ callbackUrl: '/login' });
+      }, timeout);
+    };
 
-    resetTimer()
-    window.addEventListener("mousemove", resetTimer)
-    window.addEventListener("keydown", resetTimer)
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach((event) => window.addEventListener(event, resetTimer));
+
+    resetTimer(); // Khởi động lần đầu
 
     return () => {
-      clearTimeout(window.autoLogoutTimer)
-      window.removeEventListener("mousemove", resetTimer)
-      window.removeEventListener("keydown", resetTimer)
-    }
-  }, [session])
+      events.forEach((event) => window.removeEventListener(event, resetTimer));
+      if (window.autoLogoutTimer) clearTimeout(window.autoLogoutTimer);
+    };
+  }, [router]);
 
-  return null
+  return null;
 }
