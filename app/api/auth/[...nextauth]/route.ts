@@ -1,58 +1,62 @@
-import NextAuth from "next-auth"
-import Credentials from "next-auth/providers/credentials"
-import { prisma } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
+import NextAuth from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
-export const authOptions = {
+const handler = NextAuth({
   providers: [
-    Credentials({
+    CredentialsProvider({
+      name: 'credentials',
       credentials: {
-        identifier: { label: "Username hoặc SĐT" },
-        password: {},
+        identifier: { label: 'Phone or Username', type: 'text' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.identifier || !credentials?.password) {
-          return null
-        }
+        if (!credentials?.identifier || !credentials?.password) return null;
 
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { username: credentials.identifier },
-              { phone: credentials.identifier },
-            ],
-          },
-        })
+        const isAdmin = credentials.identifier === 'admin';
+        const user = isAdmin
+          ? await prisma.user.findUnique({ where: { username: 'admin' } })
+          : await prisma.user.findUnique({ where: { phone: credentials.identifier } });
 
-        if (user && await bcrypt.compare(credentials.password, user.password)) {
-          return { id: user.id, name: user.name, role: user.role, phone: user.phone }
-        }
+        if (!user || !user.hashedPassword) return null;
 
-        return null
+        const isValid = await bcrypt.compare(credentials.password, user.hashedPassword);
+        if (!isValid) return null;
+
+        return {
+          id: user.id,
+          name: user.name,
+          phone: user.phone,
+          role: user.role,
+          username: user.username,
+        };
       },
     }),
   ],
+  pages: {
+    signIn: '/login',
+  },
+  session: {
+    strategy: 'jwt',
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
-        token.phone = user.phone
+        token.role = user.role;
+        token.phone = user.phone;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub
-        session.user.role = token.role
-        session.user.phone = token.phone
+      if (session.user) {
+        session.user.role = token.role as string;
+        session.user.phone = token.phone as string;
       }
-      return session
+      return session;
     },
   },
-  pages: { signIn: "/login" },
-  session: { strategy: "jwt" },
-}
+  secret: process.env.NEXTAUTH_SECRET,
+});
 
-const handler = NextAuth(authOptions)
-
-export { handler as GET, handler as POST }
+export { handler as GET, handler as POST };
