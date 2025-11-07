@@ -12,6 +12,11 @@ interface Props {
   customer: Customer
 }
 
+interface PointCalculatorProps {
+  customer: Customer;
+  onSuccess: () => void;
+}
+
 function roundPoints(amount: number): number {
   const thousands = Math.floor(amount / 1000)
   const remainder = amount % 1000
