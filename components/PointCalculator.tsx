@@ -1,129 +1,117 @@
-"use client"
-import { useState } from "react"
+'use client';
 
-interface Customer {
-  id: string
-  name: string
-  phone: string
-  points: number
-}
-
-interface Props {
-  customer: Customer
-}
+import { useState } from 'react';
+import { Customer } from '@prisma/client';
 
 interface PointCalculatorProps {
   customer: Customer;
-  onSuccess: () => void;
+  onSuccess: () => void;  // <-- Đảm bảo có prop này
 }
 
-function roundPoints(amount: number): number {
-  const thousands = Math.floor(amount / 1000)
-  const remainder = amount % 1000
-  return thousands + (remainder >= 500 ? 1 : 0)
-}
+export default function PointCalculator({ customer, onSuccess }: PointCalculatorProps) {
+  const [amount, setAmount] = useState('');
+  const [pointsUsed, setPointsUsed] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-export default function PointCalculator({ customer }: Props) {
-  const [amount, setAmount] = useState("")
-  const [pointsUsed, setPointsUsed] = useState("")
-  const [finalAmount, setFinalAmount] = useState(0)
-  const [pointsEarned, setPointsEarned] = useState(0)
+  const calculatePoints = () => {
+    const amt = parseFloat(amount) || 0;
+    return Math.round(amt / 1000); // 1.000đ = 1 điểm
+  };
 
-  const calculate = () => {
-    const total = parseInt(amount.replace(/\D/g, "")) || 0
-    const used = parseInt(pointsUsed.replace(/\D/g, "")) || 0
-    const discount = used * 10
-    const earned = roundPoints(total)
-    setFinalAmount(total - discount)
-    setPointsEarned(earned)
-  }
+  const maxRedeem = Math.min(customer.points, 10000); // Max 10.000 điểm = 100.000đ
+  const minRedeem = 50; // Min 50 điểm = 500đ
 
-  const suggestions = () => {
-    const max = Math.min(customer.points, 10000)
-    return [50, 100, 500, 1000, 5000].filter(p => p <= max)
-  }
+  const handleSubmit = async () => {
+    const amt = parseFloat(amount) || 0;
+    const used = parseInt(pointsUsed) || 0;
 
-  const createOrder = async () => {
-    const total = parseInt(amount.replace(/\D/g, "")) || 0
-    const used = parseInt(pointsUsed.replace(/\D/g, "")) || 0
-    if (total === 0) return alert("Vui lòng nhập giá trị đơn")
-
-    const res = await fetch("/api/order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        customerId: customer.id,
-        totalAmount: total,
-        pointsUsed: used,
-      }),
-    })
-
-    if (res.ok) {
-      alert("Tạo đơn thành công! Điểm mới: " + (customer.points + pointsEarned - used))
-      window.location.reload()
-    } else {
-      const error = await res.json()
-      alert("Lỗi: " + error.error)
+    if (amt <= 0) return setError('Nhập số tiền');
+    if (used > 0 && (used < minRedeem || used > maxRedeem)) {
+      return setError(`Đổi điểm từ ${minRedeem} đến ${maxRedeem} điểm`);
     }
-  }
 
-  const formatNumber = (num: number) => num.toLocaleString("vi-VN")
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerPhone: customer.phone,
+          amount: amt,
+          pointsUsed: used,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Lỗi tích điểm');
+
+      setSuccess('Tích điểm thành công!');
+      setAmount('');
+      setPointsUsed('');
+      onSuccess(); // Gọi callback để reset customer
+    } catch (err) {
+      setError('Lỗi hệ thống');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pointsEarned = calculatePoints();
+  const discount = (parseInt(pointsUsed) || 0) * 10; // 1 điểm = 10đ
+  const finalAmount = (parseFloat(amount) || 0) - discount;
 
   return (
-    <div className="bg-gray-800 p-6 rounded-xl space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-xl font-bold mb-4">Tính điểm & Đổi điểm</h2>
+
+      <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Giá trị đơn (VND)</label>
+          <label className="block text-sm font-medium">Tổng tiền (VNĐ)</label>
           <input
-            type="text"
-            placeholder="Nhập số tiền"
-            value={formatNumber(parseInt(amount) || 0)}
-            onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
-            className="p-3 rounded-lg bg-gray-700 text-white w-full"
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Nhập số tiền..."
+            className="w-full px-4 py-2 border rounded-lg"
           />
+          {amount && <p className="text-sm text-green-600 mt-1">Tích: {pointsEarned} điểm</p>}
         </div>
+
         <div>
-          <label className="block text-sm font-medium mb-1">Điểm đổi (tùy chọn)</label>
+          <label className="block text-sm font-medium">
+            Đổi điểm (tối đa {maxRedeem.toLocaleString()} điểm)
+          </label>
           <input
-            type="text"
-            placeholder="Nhập số điểm"
-            value={formatNumber(parseInt(pointsUsed) || 0)}
-            onChange={(e) => setPointsUsed(e.target.value.replace(/\D/g, ""))}
-            onBlur={calculate}
-            className="p-3 rounded-lg bg-gray-700 text-white w-full"
+            type="number"
+            value={pointsUsed}
+            onChange={(e) => setPointsUsed(e.target.value)}
+            placeholder="Số điểm muốn đổi..."
+            min={minRedeem}
+            max={maxRedeem}
+            className="w-full px-4 py-2 border rounded-lg"
           />
+          {pointsUsed && (
+            <p className="text-sm text-blue-600 mt-1">
+              Giảm: {discount.toLocaleString()}đ → Thanh toán: {finalAmount.toLocaleString()}đ
+            </p>
+          )}
         </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !amount}
+          className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+        >
+          {loading ? 'Đang xử lý...' : 'Xác nhận'}
+        </button>
+
+        {error && <p className="text-red-600">{error}</p>}
+        {success && <p className="text-green-600">{success}</p>}
       </div>
-      <div className="text-sm text-gray-400 space-y-1">
-        <p>Min 50 điểm (500đ), Max 10.000 điểm (100.000đ). 1 điểm = 10đ giảm giá.</p>
-        <p>Điểm tích được: <span className="text-cyan-400">{formatNumber(pointsEarned)}</span> điểm (từ {formatNumber(parseInt(amount) || 0)}đ)</p>
-      </div>
-      {suggestions().length > 0 && (
-        <div>
-          <p className="text-sm text-cyan-400">Gợi ý đổi:</p>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {suggestions().map((p) => (
-              <button
-                key={p}
-                onClick={() => {
-                  setPointsUsed(p.toString())
-                  calculate()
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
-              >
-                {formatNumber(p)}đ ({p * 10}đ giảm)
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      <button
-        onClick={createOrder}
-        className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg text-xl font-bold"
-        disabled={finalAmount < 0 || !amount}
-      >
-        Tạo đơn hàng - Thanh toán: {formatNumber(finalAmount)}đ
-      </button>
     </div>
-  )
+  );
 }
