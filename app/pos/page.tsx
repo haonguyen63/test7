@@ -1,39 +1,32 @@
-"use client"
-import { useState } from "react"
-import CustomerSearch from "@/components/CustomerSearch"
-import PointCalculator from "@/components/PointCalculator"
-import { useSession } from "next-auth/react"
-import AutoLogout from "@/components/AutoLogout"
+'use client';
 
-export default function POS() {
-  const { data: session } = useSession()
-  const [customer, setCustomer] = useState(null)
+import { useState } from 'react';
+import CustomerSearch from '@/components/CustomerSearch';
+import PointCalculator from '@/components/PointCalculator';
+import { Customer } from '@prisma/client';
+
+export default function POSPage() {
+  const [customer, setCustomer] = useState<Customer | null>(null);
 
   return (
-    <>
-      <AutoLogout />
-      <div className="p-8 max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-8">Điểm bán hàng</h1>
-        {session && (
-          <p className="text-cyan-400 mb-4">Đăng nhập: {session.user?.name}</p>
-        )}
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Bán hàng & Tích điểm</h1>
 
-        <CustomerSearch onCustomer={setCustomer} />
+      {/* Tìm khách hàng */}
+      <CustomerSearch onCustomer={setCustomer} />
 
-        {customer && (
-          <>
-            <div className="bg-gray-800 p-4 rounded-lg mb-6 text-white">
-              <p className="text-xl">
-                {customer.name} - {customer.phone} - Số dư điểm:{" "}
-                <span className="text-cyan-400">
-                  {customer.points.toLocaleString()}
-                </span>
-              </p>
-            </div>
-            <PointCalculator customer={customer} />
-          </>
-        )}
-      </div>
-    </>
-  )
+      {/* Chỉ hiện khi có khách hàng */}
+      {customer && (
+        <>
+          <div className="bg-blue-50 p-4 rounded-lg mb-6">
+            <p className="font-semibold">{customer.name}</p>
+            <p>SĐT: {customer.phone}</p>
+            <p>Điểm hiện tại: {customer.points.toLocaleString()}</p>
+          </div>
+
+          <PointCalculator customer={customer} onSuccess={() => setCustomer(null)} />
+        </>
+      )}
+    </div>
+  );
 }
