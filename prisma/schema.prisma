@@ -7,44 +7,60 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          String   @id @default(cuid())
-  phone       String   @unique
-  username    String?  @unique
-  name        String
-  password    String
-  role        Role     @default(STAFF)
-  createdAt   DateTime @default(now())
-  managedBy   String?  
-  orders      Order[]
-  createdUsers User[]  @relation("ManagedUsers", references: [id])
-  manager     User?    @relation("ManagedUsers", fields: [managedBy], references: [id])
-}
-
-model Customer {
-  id          String   @id @default(cuid())
-  phone       String   @unique
-  name        String
-  points      Int      @default(0)
-  createdAt   DateTime @default(now())
-  orders      Order[]
-}
-
-model Order {
-  id           String   @id @default(cuid())
-  customerId   String
-  customer     Customer @relation(fields: [customerId], references: [id])
-  staffId      String
-  staff        User     @relation(fields: [staffId], references: [id])
-  totalAmount  Int      
-  pointsEarned Int
-  pointsUsed   Int
-  discount     Int      
-  createdAt    DateTime @default(now())
-}
-
 enum Role {
   STAFF
   MANAGER
   ADMIN
+}
+
+model User {
+  id             String    @id @default(cuid())
+  phone          String    @unique
+  username       String?   @unique
+  name           String
+  hashedPassword String
+  role           Role      @default(STAFF)
+
+  // Đơn hàng do user tạo (staff hoặc customer)
+  orders         Order[]
+
+  // Manager tạo staff (quan hệ tự tham chiếu)
+  createdUsers   User[]    @relation("ManagedUsers")
+  manager        User?     @relation("ManagedUsers", fields: [managedBy], references: [id])
+  managedBy      String?
+
+  // Staff quản lý customer
+  customers      Customer[]
+
+  @@map("users")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String
+  points    Int      @default(0)
+
+  orders    Order[]
+  staff     User?    @relation(fields: [staffId], references: [id])
+  staffId   String?
+
+  @@map("customers")
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  customer     Customer @relation(fields: [customerId], references: [id])
+  customerId   String
+  staff        User     @relation(fields: [staffId], references: [id])
+  staffId      String
+
+  amount       Int      // Tổng tiền (đơn vị: VND)
+  pointsEarned Int      // Điểm tích
+  pointsUsed   Int      @default(0) // Điểm đổi
+  discount     Int      @default(0) // Tiền giảm (VND)
+
+  createdAt    DateTime @default(now())
+
+  @@map("orders")
 }
