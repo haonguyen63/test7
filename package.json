@@ -7,16 +7,19 @@
     "build": "next build",
     "start": "next start",
     "prisma:push": "prisma db push",
+    "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "next": "14.2.5",
+    "next-auth": "^4.24.7",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "@prisma/client": "5.20.0",
+    "@prisma/client": "^5.16.1",
     "next-auth": "4.24.7",
     "bcryptjs": "2.4.3",
-    "papaparse": "5.4.1"
+    "papaparse": "5.4.1",
+    "csv-stringify": "^6.4.5"
   },
   "devDependencies": {
     "prisma": "5.20.0",
