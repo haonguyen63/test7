@@ -1,86 +1,58 @@
-"use client"
-import { useState } from "react"
+'use client';
 
-interface Customer {
-  id: string
-  phone: string
-  name: string
-  points: number
+import { useState } from 'react';
+import { Customer } from '@prisma/client';
+
+interface CustomerSearchProps {
+  onCustomer: (customer: Customer) => void;
 }
 
-interface Props {
-  onCustomer: (customer: Customer) => void
-}
-
-export default function CustomerSearch({ onCustomer }: Props) {
-  const [phone, setPhone] = useState("")
-  const [name, setName] = useState("")
-  const [msg, setMsg] = useState("")
+export default function CustomerSearch({ onCustomer }: CustomerSearchProps) {
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const search = async () => {
-    if (!phone) return
-    const res = await fetch(`/api/customer?phone=${phone}`)
-    const data = await res.json()
-    if (data.found) {
-      onCustomer(data.customer)
-      setMsg("")
-    } else {
-      setMsg("Khách mới – nhập tên để tạo")
-      setName("")
-    }
-  }
+    if (!phone.trim()) return;
 
-  const create = async () => {
-    if (!name || !phone) return
-    const res = await fetch("/api/customer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, name }),
-    })
-    if (res.ok) {
-      const cust = await res.json()
-      onCustomer(cust)
-      setMsg("Tạo khách thành công!")
-    } else {
-      setMsg("Lỗi tạo khách")
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/customer?phone=${phone}`);
+      if (!res.ok) throw new Error('Không tìm thấy');
+
+      const customer: Customer = await res.json();
+      onCustomer(customer);
+    } catch (err) {
+      setError('Không tìm thấy khách hàng');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="bg-gray-800 p-6 rounded-xl space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="mb-6">
+      <label className="block text-sm font-medium mb-2">Số điện thoại khách hàng</label>
+      <div className="flex gap-2">
         <input
-          type="tel"
-          placeholder="Số điện thoại khách"
+          type="text"
           value={phone}
-          onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-          className="p-3 rounded-lg bg-gray-700 text-white w-full"
-          maxLength={11}
+          onChange={(e) => setPhone(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && search()}
+          placeholder="Nhập SĐT..."
+          className="flex-1 px-4 py-2 border rounded-lg"
+          disabled={loading}
         />
-        <input
-          placeholder="Tên khách (nếu tạo mới)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="p-3 rounded-lg bg-gray-700 text-white w-full"
-          disabled={!!msg && !msg.includes("mới")}
-        />
-      </div>
-      <div className="flex flex-col sm:flex-row gap-4">
-        <button 
-          onClick={search} 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex-1"
+        <button
+          onClick={search}
+          disabled={loading || !phone.trim()}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          Tìm khách
-        </button>
-        <button 
-          onClick={create} 
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex-1"
-          disabled={!msg || !msg.includes("mới")}
-        >
-          Tạo khách mới
+          {loading ? 'Đang tìm...' : 'Tìm'}
         </button>
       </div>
-      {msg && <p className={`mt-3 p-2 rounded ${msg.includes("thành") ? "text-green-400" : "text-yellow-400"}`}>{msg}</p>}
+      {error && <p className="text-red-600 mt-2">{error}</p>}
     </div>
-  )
+  );
 }
