@@ -1,4 +1,3 @@
-// app/login/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -37,39 +36,33 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo / Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
-            Tích Điểm Pro
+        <div
+          className="bg-[#1e1e1e] rounded-2xl shadow-xl p-8 border border-[#333333]/50"
+          style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)' }}
+        >
+          <h1 className="text-2xl font-bold text-white text-center mb-8">
+            Đăng nhập
           </h1>
-          <p className="text-gray-400 mt-2">Quản lý điểm thưởng thông minh</p>
-        </div>
 
-        {/* Card */}
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-2xl p-8">
-          <h2 className="text-2xl font-semibold text-white mb-6 text-center">Đăng nhập</h2>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Username / SĐT */}
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Username hoặc Số điện thoại
+              <label className="block text-sm font-medium text-[#b0b0b0] mb-2">
+                Username (hoặc Số điện thoại)
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="admin hoặc 0900000000"
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[#2a2a2a] text-white rounded-lg border border-[#333333] placeholder-[#666666] focus:outline-none focus:border-[#4f8fff] focus:ring-2 focus:ring-[#4f8fff]/30 transition-all duration-200"
                 disabled={loading}
               />
             </div>
 
-            {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-[#b0b0b0] mb-2">
                 Mật khẩu
               </label>
               <input
@@ -77,23 +70,21 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[#2a2a2a] text-white rounded-lg border border-[#333333] placeholder-[#666666] focus:outline-none focus:border-[#4f8fff] focus:ring-2 focus:ring-[#4f8fff]/30 transition-all duration-200"
                 disabled={loading}
               />
             </div>
 
-            {/* Error */}
             {error && (
-              <p className="text-red-400 text-sm text-center bg-red-900/20 py-2 px-4 rounded-lg border border-red-800">
+              <div className="bg-red-900/20 border border-red-800 text-red-400 text-sm py-2 px-4 rounded-lg text-center">
                 {error}
-              </p>
+              </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-semibold rounded-xl shadow-lg hover:shadow-blue-500/25 transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-3.5 bg-[#2563eb] hover:bg-[#3b82f6] text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:bg-[#2563eb] disabled:hover:shadow-md disabled:hover:translate-y-0"
             >
               {loading ? (
                 <span className="flex items-center justify-center">
@@ -109,10 +100,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Footer */}
-          <p className="text-center text-xs text-gray-500 mt-6">
-            Admin: <code className="bg-gray-800 px-2 py-1 rounded">admin</code> /{' '}
-            <code className="bg-gray-800 px-2 py-1 rounded">admin123</code>
+          <p className="text-center text-xs text-[#888888] mt-6">
+            Admin: <code className="bg-[#2a2a2a] px-2 py-1 rounded text-[#4f8fff]">admin</code> /{' '}
+            <code className="bg-[#2a2a2a] px-2 py-1 rounded text-[#4f8fff]">admin123</code>
           </p>
         </div>
       </div>
