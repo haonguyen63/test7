@@ -8,7 +8,8 @@
     "start": "next start",
     "prisma:push": "prisma db push",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "audit:fix": "npm audit fix --force"
   },
   "dependencies": {
     "next": "14.2.5",
