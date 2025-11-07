@@ -4,7 +4,11 @@ import { useState } from 'react';
 import CustomerSearch from '@/components/CustomerSearch';
 import PointCalculator from '@/components/PointCalculator';
 import { Customer } from '@prisma/client';
+import { formatVND, formatPoints } from '@/lib/format';
 
+
+<td className="p-2">{formatVND(order.amount)}</td>
+<td className="p-2">{formatPoints(order.pointsEarned)}</td>
 export default function POSPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
 
