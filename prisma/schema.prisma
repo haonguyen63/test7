@@ -14,22 +14,18 @@ enum Role {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  phone          String    @unique
-  username       String?   @unique
-  name           String
+  id             String   @id @default(cuid())
+  phone          String   @unique
+  username       String?  @unique
+  name           String   // ← CỘT NÀY BẮT BUỘC
   hashedPassword String
-  role           Role      @default(STAFF)
+  role           Role     @default(STAFF)
 
-  // Đơn hàng do user tạo (staff hoặc customer)
   orders         Order[]
-
-  // Manager tạo staff (quan hệ tự tham chiếu)
-  createdUsers   User[]    @relation("ManagedUsers")
-  manager        User?     @relation("ManagedUsers", fields: [managedBy], references: [id])
+  createdUsers   User[]   @relation("ManagedUsers")
+  manager        User?    @relation("ManagedUsers", fields: [managedBy], references: [id])
   managedBy      String?
 
-  // Staff quản lý customer
   customers      Customer[]
 
   @@map("users")
@@ -38,7 +34,7 @@ model User {
 model Customer {
   id        String   @id @default(cuid())
   phone     String   @unique
-  name      String
+  name      String   // ← CỘT NÀY CŨNG BẮT BUỘC
   points    Int      @default(0)
 
   orders    Order[]
@@ -50,15 +46,15 @@ model Customer {
 
 model Order {
   id           String   @id @default(cuid())
-  customer     Customer @relation(fields: [customerId], references: [id])
   customerId   String
-  staff        User     @relation(fields: [staffId], references: [id])
+  customer     Customer @relation(fields: [customerId], references: [id])
   staffId      String
+  staff        User     @relation(fields: [staffId], references: [id])
 
-  amount       Int      // Tổng tiền (đơn vị: VND)
-  pointsEarned Int      // Điểm tích
-  pointsUsed   Int      @default(0) // Điểm đổi
-  discount     Int      @default(0) // Tiền giảm (VND)
+  amount       Int      // VND
+  pointsEarned Int
+  pointsUsed   Int      @default(0)
+  discount     Int      @default(0)
 
   createdAt    DateTime @default(now())
 
