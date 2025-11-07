@@ -1,41 +1,37 @@
-import { NextResponse } from "next/server"
-import prisma from "@/lib/prisma"
-import bcrypt from "bcryptjs"
-import { authOptions } from "../auth/[...nextauth]/route"
-import { getServerSession } from "next-auth"
-
-export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const users = await prisma.user.findMany({
-    select: { id: true, name: true, phone: true, role: true }
-  })
-  return NextResponse.json(users)
-}
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const session = await getServerSession();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  try {
-    const { name, phone, role } = await request.json()
-    const hash = await bcrypt.hash("default123", 10)
-    const user = await prisma.user.create({
-      data: { 
-        name, 
-        phone, 
-        password: hash, 
-        role,
-        username: phone // Use phone as username for staff
-      },
-    })
-    return NextResponse.json(user)
-  } catch (error) {
-    return NextResponse.json({ error: "Error creating user" }, { status: 500 })
+  const role = session.user.role as string;
+  if (!['MANAGER', 'ADMIN'].includes(role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  const body = await request.json();
+  const { name, phone, password, role: newRole } = body;
+
+  if (!name || !phone || !password || !newRole) {
+    return NextResponse.json({ error: 'Missing data' }, { status: 400 });
+  }
+
+  const hashed = await bcrypt.hash(password, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      name,
+      phone,
+      hashedPassword: hashed,
+      role: newRole,
+      managedBy: session.user.id as string,
+    },
+  });
+
+  return NextResponse.json({ id: user.id, name: user.name, phone: user.phone, role: user.role });
 }
