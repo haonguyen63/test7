@@ -8,7 +8,7 @@
     "start": "next start",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "postinstall": "prisma generate && prisma db push && npm run prisma:seed"
+    "postinstall": "prisma generate && prisma db push --force-reset && npm run prisma:seed"
   },
   "dependencies": {
     "tailwindcss": "^3.4.0",
