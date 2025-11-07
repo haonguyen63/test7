@@ -7,6 +7,10 @@ export default function Export() {
   const [phone, setPhone] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+  const csv = orders.map(order => ({
+  amount: formatVND(order.amount),
+  points: formatPoints(order.pointsEarned),
+}));
 
   const handleExport = async () => {
     const params = new URLSearchParams({ phone, startDate, endDate })
