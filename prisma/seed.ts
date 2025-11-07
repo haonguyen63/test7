@@ -12,7 +12,7 @@ async function main() {
       username: 'admin',
       phone: '0900000000',
       name: 'Administrator',
-      password: hash,
+      hashedPassword: hash,
       role: 'ADMIN',
     },
   });
