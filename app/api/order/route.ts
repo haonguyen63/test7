@@ -1,57 +1,47 @@
-import { NextResponse } from "next/server"
-import prisma from "@/lib/prisma"
-import { authOptions } from "../auth/[...nextauth]/route"
-import { getServerSession } from "next-auth"
-
-function roundPoints(amount: number): number {
-  const thousands = Math.floor(amount / 1000)
-  const remainder = amount % 1000
-  return thousands + (remainder >= 500 ? 1 : 0)
-}
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
 
 export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
-    }
-
-    const { customerId, totalAmount, pointsUsed = 0 } = await request.json()
-    const pointsEarned = roundPoints(totalAmount)
-    const discount = pointsUsed * 10
-
-    if (pointsUsed < 50 || pointsUsed > 10000) {
-      return NextResponse.json({ error: "Điểm đổi không hợp lệ" }, { status: 400 })
-    }
-    if (discount > 100000) {
-      return NextResponse.json({ error: "Max 100.000đ" }, { status: 400 })
-    }
-
-    const order = await prisma.$transaction(async (tx) => {
-      const cust = await tx.customer.findUnique({ where: { id: customerId } })
-      if (!cust || cust.points < pointsUsed) {
-        throw new Error("Không đủ điểm")
-      }
-
-      await tx.customer.update({
-        where: { id: customerId },
-        data: { points: { increment: pointsEarned - pointsUsed } },
-      })
-
-      return tx.order.create({
-        data: {
-          customerId,
-          staffId: session.user.id,
-          totalAmount,
-          pointsEarned,
-          pointsUsed,
-          discount,
-        },
-      })
-    })
-
-    return NextResponse.json(order)
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+  const session = await getServerSession();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const role = session.user.role as string;
+  if (!['STAFF', 'MANAGER', 'ADMIN'].includes(role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const body = await request.json();
+  const { customerPhone, amount } = body;
+
+  if (!customerPhone || !amount) {
+    return NextResponse.json({ error: 'Missing data' }, { status: 400 });
+  }
+
+  let customer = await prisma.customer.findUnique({ where: { phone: customerPhone } });
+  if (!customer) {
+    customer = await prisma.customer.create({
+      data: { phone: customerPhone, name: 'Khách mới', staffId: session.user.id as string },
+    });
+  }
+
+  const pointsEarned = Math.round(amount / 1000);
+
+  const order = await prisma.order.create({
+    data: {
+      customerId: customer.id,
+      staffId: session.user.id as string,
+      amount,
+      pointsEarned,
+    },
+  });
+
+  await prisma.customer.update({
+    where: { id: customer.id },
+    data: { points: { increment: pointsEarned } },
+  });
+
+  return NextResponse.json(order);
 }
