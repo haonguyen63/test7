@@ -48,6 +48,7 @@ const handler = NextAuth({
       if (session.user) {
         session.user.role = token.role as string;
         session.user.phone = token.phone as string;
+        session.user.id = token.sub as string;
       }
       return session;
     },
